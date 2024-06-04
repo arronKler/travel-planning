@@ -1,15 +1,17 @@
-'use client';
-import { AnimatedPinDemo } from '@/components/Animated';
-import { Button, Textarea } from '@nextui-org/react';
-import { useState } from 'react';
+"use client"
+import { AnimatedPinDemo } from "@/components/Animated"
+import { Button, Textarea } from "@nextui-org/react"
+import { useState } from "react"
+import { PlanList } from "./planlist"
 
 export function Planner() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("")
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1">
-        <AnimatedPinDemo></AnimatedPinDemo>
+        <PlanList></PlanList>
+        {/* <AnimatedPinDemo></AnimatedPinDemo> */}
       </div>
       <div className="shrink-0 p-4 flex items-center border-t border-t-gray-600">
         <Textarea
@@ -30,5 +32,5 @@ export function Planner() {
         </div>
       </div>
     </div>
-  );
+  )
 }
