@@ -1,4 +1,4 @@
-import { RouteEdge } from "@/constants/routes"
+import { RouteEdge, RouteNode } from "@/constants/routes"
 import { AmapStep } from "@/constants/amap"
 
 export function resolveSteps(steps: AmapStep[]): RouteEdge[] {
@@ -8,12 +8,13 @@ export function resolveSteps(steps: AmapStep[]): RouteEdge[] {
   let remainedSteps = steps
   while (exitFlag) {
     let waypointIdx = remainedSteps.findIndex((st) =>
-      st.instruction.endsWith("途径地")
+      st.instruction.includes("到达途经地")
     )
+    console.log("waypoint", waypointIdx)
 
     // 最后一段路，可以退出了
     if (waypointIdx < 0) {
-      waypointIdx = steps.length - 1
+      waypointIdx = remainedSteps.length - 1
       exitFlag = false
     }
 
@@ -45,9 +46,35 @@ export function formatDistance(distance: number) {
 }
 
 export function formatTime(time: number) {
-  return (time / 60 / 60).toFixed(2)
+  return (time / 60 / 60).toFixed(2) + "小时"
 }
 
 export function formatTolls(tolls: number) {
   return String(tolls)
+}
+
+export function resolveRoutesForSearch(routeNodes: RouteNode[]) {
+  const length = routeNodes.length
+  console.log("routenodes", routeNodes)
+  if (length < 2) {
+    throw new Error("Not valid routes")
+  }
+  if (length == 2) {
+    return {
+      start: formatRouteSearch(routeNodes[0]),
+      end: formatRouteSearch(routeNodes[1]),
+    }
+  }
+
+  return {
+    start: formatRouteSearch(routeNodes[0]),
+    end: formatRouteSearch(routeNodes[length - 1]),
+    waypoints: routeNodes
+      .slice(1, length - 1)
+      .map((node) => formatRouteSearch(node)),
+  }
+}
+
+export function formatRouteSearch(routeNode: RouteNode) {
+  return [Number(routeNode.lng), Number(routeNode.lat)]
 }

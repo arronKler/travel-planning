@@ -1,16 +1,17 @@
 "use client"
 
 import { getGeoCode } from "@/request/geo"
-import { usePlanStore } from "@/store/plan"
 import { resolveSteps } from "@/utils/routes"
+import { usePlanStore } from "@/store/plan"
 import AMapLoader from "@amap/amap-jsapi-loader"
 import { useEffect, useState } from "react"
+import { resolveRoutesForSearch } from "@/utils/routes"
 
 export function MapComp() {
   const [amapLoaded, setAmapLoaded] = useState(false)
   const [amap, setAmap] = useState<any>()
 
-  const { routeNodes, initDemoRoute, updateRouteNode } = usePlanStore()
+  const { routeNodes, initDemoRoute, updateDriving } = usePlanStore()
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -42,56 +43,33 @@ export function MapComp() {
 
   useEffect(() => {
     initDemoRoute()
-
-    async function load() {
-      await getGeoCode("北京市朝阳区阜通东大街6号", "成都")
-      await getGeoCode("天水", "天水")
-    }
-    load()
   }, [])
 
   useEffect(() => {
     if (!amap) return
-    if (routeNodes && routeNodes.length > 0) {
+
+    // @ts-ignore
+    AMap.plugin(["AMap.Driving"], function () {
       // @ts-ignore
-      AMap.plugin(["AMap.Driving"], function () {
-        // @ts-ignore
-        const driving = new AMap.Driving({
-          map: amap,
-          extentions: "all",
-        })
-        //获取起终点规划线路
-        /* const points = routeNodes.map((node) => ({
+      const driving = new AMap.Driving({
+        map: amap,
+        extentions: "all",
+      })
+
+      console.log("init driving", driving)
+      //获取起终点规划线路
+      /* const points = routeNodes.map((node) => ({
           keyword: node.keyword,
           city: node.city,
         })) */
 
-        const startLngLat = [116.379028, 39.865042] //起始点坐标
-        const endLngLat = [105.724828, 34.581514] //终点坐标
-        const points = [startLngLat, endLngLat]
-        console.log("print points", points)
-        driving.search(
-          startLngLat,
-          endLngLat,
-          function (status: any, result: any) {
-            if (status === "complete") {
-              //status：complete 表示查询成功，no_data 为查询无结果，error 代表查询错误
-              //查询成功时，result 即为对应的驾车导航信息
-              console.log(result)
-              const allSteps = result.routes[0].steps
-              const edges = resolveSteps(allSteps)
-              console.log("get edges", edges)
+      // const startLngLat = [116.379028, 39.865042] //起始点坐标
+      // const endLngLat = [105.724828, 34.581514] //终点坐标
 
-              edges.forEach((edge, idx) => {
-                updateRouteNode(idx, { edge })
-              })
-            } else {
-              console.log("获取驾车数据失败：" + result)
-            }
-          }
-        )
-      })
-    }
+      // const points = [startLngLat, endLngLat]
+
+      updateDriving(driving)
+    })
   }, [amap])
 
   return (

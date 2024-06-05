@@ -2,29 +2,91 @@ import { create } from "zustand"
 import { immer } from "zustand/middleware/immer"
 
 import { RouteNode } from "@/constants/routes"
+import { getGeoCode } from "@/request/geo"
 
 interface PlanStore {
   routeNodes: RouteNode[]
+  driving: any
+  updateDriving: (d: any) => void
   initDemoRoute: () => void
   updateRouteNode: (idx: number, node: Partial<RouteNode>) => void
+  setRouteNodes: (k: string[]) => Promise<void>
+  replaceRouteNodes: (r: RouteNode[]) => void
 }
 
 export const usePlanStore = create<PlanStore>()(
   immer((set) => ({
     routeNodes: [] as RouteNode[],
+    driving: null,
+
+    replaceRouteNodes: (nodes: RouteNode[]) => {
+      set((state) => {
+        state.routeNodes = nodes
+      })
+    },
 
     // TODO: should remove
-    initDemoRoute: () => {
-      set((state) => {
-        state.routeNodes = [
-          { lng: 0, lat: 0, keyword: "成都市", city: "成都" },
-          { lng: 0, lat: 0, keyword: "天水", city: "天水" },
-          { lng: 0, lat: 0, keyword: "兰州", city: "兰州" },
-          { lng: 0, lat: 0, keyword: "西宁", city: "西宁" },
-        ]
-        return state
+    initDemoRoute: async () => {
+      const demoRoutes = [
+        { lng: 0, lat: 0, keyword: "成都市", city: "成都" },
+        { lng: 0, lat: 0, keyword: "天水", city: "天水" },
+        { lng: 0, lat: 0, keyword: "兰州", city: "兰州" },
+        { lng: 0, lat: 0, keyword: "西宁", city: "西宁" },
+      ]
+
+      const geoCodesRequests = []
+      // @ts-ignore
+      for (const route of demoRoutes) {
+        // set((state) => {
+        //   state.routeNodes.push({
+        //     ...node,
+        //   })
+        // })
+        geoCodesRequests.push(getGeoCode(route.keyword, route.city))
+      }
+      const codes = await Promise.all(geoCodesRequests)
+      const demoRoutesWithCodes = demoRoutes.map((route, idx) => {
+        const [lng, lat] = codes[idx][0].location.split(",")
+        return {
+          ...route,
+          lng: lng,
+          lat: lat,
+        }
       })
-      console.log("init down")
+
+      set((state) => {
+        console.log("init down", demoRoutesWithCodes)
+        state.routeNodes = demoRoutesWithCodes
+      })
+    },
+
+    setRouteNodes: async (keywords: string[]) => {
+      const demoRoutes = keywords.map((k) => ({
+        lng: 0,
+        lat: 0,
+        keyword: k,
+        city: "成都",
+      }))
+
+      const geoCodesRequests = []
+
+      // @ts-ignore
+      for (const route of demoRoutes) {
+        geoCodesRequests.push(getGeoCode(route.keyword, route.city))
+      }
+      const codes = await Promise.all(geoCodesRequests)
+      const demoRoutesWithCodes = demoRoutes.map((route, idx) => {
+        const [lng, lat] = codes[idx][0].location.split(",")
+        return {
+          ...route,
+          lng: lng,
+          lat: lat,
+        }
+      })
+
+      set((state) => {
+        state.routeNodes = demoRoutesWithCodes
+      })
     },
 
     updateStartNode: (node: RouteNode) => {
@@ -34,8 +96,6 @@ export const usePlanStore = create<PlanStore>()(
           ...prevNode,
           ...node,
         }
-
-        return state
       })
     },
 
@@ -46,8 +106,6 @@ export const usePlanStore = create<PlanStore>()(
           ...prevNode,
           ...node,
         }
-
-        return state
       })
     },
 
@@ -64,7 +122,12 @@ export const usePlanStore = create<PlanStore>()(
     removeRoutesNode: (idx: number) => {
       set((state) => {
         state.routeNodes.splice(idx, 1)
-        return state
+      })
+    },
+
+    updateDriving: (driving: any) => {
+      set((state) => {
+        state.driving = driving
       })
     },
   }))

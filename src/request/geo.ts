@@ -1,6 +1,9 @@
 const AMAP_KEY = "12b358331608403707de87cfd12f5d83"
 
-export async function getGeoCode(keyword: string, city: string) {
+export async function getGeoCode(
+  keyword: string,
+  city: string
+): Promise<any[]> {
   const response = await fetch(
     `https://restapi.amap.com/v3/geocode/geo?address=${keyword}&output=json&key=${AMAP_KEY}`,
     {
@@ -8,5 +11,7 @@ export async function getGeoCode(keyword: string, city: string) {
     }
   )
 
-  console.log("response", keyword, await response.json())
+  // console.log("response", keyword, await response.json())
+  const result = await response.json()
+  return result.geocodes
 }
