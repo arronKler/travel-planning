@@ -2,14 +2,16 @@
 import { usePlanStore } from "@/store/plan"
 import { Button, Textarea } from "@nextui-org/react"
 import { RouteNode } from "@/constants/routes"
-import { resolveRoutesForSearch } from "@/utils/routes"
+import { calculateTotalDistance, resolveRoutesForSearch } from "@/utils/routes"
 import { getGeoCode } from "@/request/geo"
 import { resolveSteps } from "@/utils/routes"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { produce } from "immer"
 import { Input } from "@nextui-org/react"
+import { calculateTotalTolls } from "@/utils/routes"
 
 export function PlanList() {
+  const [keywords, setKeywords] = useState<string[]>(["", "", ""])
   const [routeNodes, driving, updateRouteNode, replaceRouteNodes] =
     usePlanStore((state) => [
       state.routeNodes,
@@ -18,9 +20,23 @@ export function PlanList() {
       state.replaceRouteNodes,
     ])
 
-  const [loading, setLoading] = useState(false)
+  useEffect(() => {
+    const nodesStr = localStorage.getItem("draft")
+    if (nodesStr) {
+      const nodes = JSON.parse(nodesStr)
+      // replaceRouteNodes(nodes)
+      // console.log("nodes", nodesStr, nodes)
+      setKeywords(nodes)
+    }
+  }, [])
 
-  const [keywords, setKeywords] = useState<string[]>(["", "", ""])
+  const [total, setTotal] = useState<{
+    tolls: string
+    distance: string
+    predict_gas: string
+  }>({ tolls: "0", distance: "0", predict_gas: "0" })
+
+  const [loading, setLoading] = useState(false)
 
   const updateKeywords = (idx: number, keyword: string) => {
     setKeywords(
@@ -53,6 +69,8 @@ export function PlanList() {
       keyword: k,
       city: "成都",
     }))
+
+    localStorage.setItem("draft", JSON.stringify(keywords))
 
     const geoCodesRequests = []
 
@@ -92,6 +110,13 @@ export function PlanList() {
           edges.forEach((edge, idx) => {
             updateRouteNode(idx, { edge })
           })
+
+          const { predict_gas, distance } = calculateTotalDistance(edges as any)
+          setTotal({
+            tolls: calculateTotalTolls(edges as any),
+            distance,
+            predict_gas,
+          })
         } else {
           console.log("获取驾车数据失败：" + result)
         }
@@ -99,6 +124,23 @@ export function PlanList() {
         setLoading(false)
       }
     )
+  }
+
+  const exportPlan = () => {
+    let planStr = ""
+    // @ts-ignore
+    for (const [idx, node] of routeNodes
+      .slice(0, routeNodes.length - 1)
+      .entries()) {
+      console.log("idx, ", idx, node)
+      planStr += `第 ${idx + 1} 段: 【${node.keyword} - ${
+        routeNodes[idx + 1].keyword
+      }】距离 ${node.edge.distance_str} 公里, 开车时间 ${
+        node.edge.time_str
+      } 小时\n`
+    }
+
+    console.log(planStr)
   }
 
   return (
@@ -120,26 +162,32 @@ export function PlanList() {
               </section>
               {routeNodes[idx]?.edge && (
                 <section className="flex rounded flex-col items-center">
-                  <div className="border-r border-r-black border-dashed h-10"></div>
+                  <div className="border-r border-dashed h-10"></div>
                   <div>
-                    <span className="border-r border-r-black mr-1 pr-1">
-                      距离: {routeNodes[idx]?.edge?.distance_str} 米
+                    <span className="border-r mr-1 pr-1">
+                      距离: {routeNodes[idx]?.edge?.distance_str} 公里
                     </span>
-                    <span className="border-r border-r-black mr-1 pr-1">
+                    <span className="border-r mr-1 pr-1">
                       路费: {routeNodes[idx]?.edge?.tolls_str} 元
                     </span>
-                    <span>时间: {routeNodes[idx]?.edge?.time_str}</span>
+                    <span>时间: {routeNodes[idx]?.edge?.time_str} 小时</span>
                   </div>
-                  <div className="border-r border-r-black border-dashed h-10"></div>
+                  <div className="border-r border-dashed h-10"></div>
                 </section>
               )}
             </div>
           )
         })}
       </div>
+
+      <div className="">
+        总开销: {total.tolls} 元，总里程: {total.distance} 公里, 预估油费:
+        {total.predict_gas}
+      </div>
       <Button color="primary" onClick={planIt} isLoading={loading}>
         帮我规划
       </Button>
+      <Button onClick={exportPlan}>导出</Button>
     </>
   )
 }

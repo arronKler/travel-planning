@@ -42,7 +42,8 @@ export function MapComp() {
   }, [])
 
   useEffect(() => {
-    initDemoRoute()
+    // initDemoRoute()
+    console.log(process.env.API_KEY)
   }, [])
 
   useEffect(() => {

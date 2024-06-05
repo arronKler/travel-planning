@@ -14,7 +14,7 @@ export function Planner() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1">
+      <div className="flex-1 overflow-auto">
         <PlanList></PlanList>
         {/* <AnimatedPinDemo></AnimatedPinDemo> */}
       </div>

@@ -41,12 +41,29 @@ export function resolveSteps(steps: AmapStep[]): RouteEdge[] {
   return edges
 }
 
+export function calculateTotalTolls(steps: AmapStep[]): string {
+  return formatTolls(steps.reduce((prev, step) => prev + step.tolls, 0))
+}
+
+export function calculateTotalDistance(steps: AmapStep[]): {
+  distance: string
+  predict_gas: string
+} {
+  const distance = formatDistance(
+    steps.reduce((prev, step) => prev + step.distance, 0)
+  )
+  return {
+    distance: distance,
+    predict_gas: ((Number(distance) / 800) * 500).toFixed(2),
+  }
+}
+
 export function formatDistance(distance: number) {
   return String((distance / 1000).toFixed(2))
 }
 
 export function formatTime(time: number) {
-  return (time / 60 / 60).toFixed(2) + "小时"
+  return (time / 60 / 60).toFixed(2)
 }
 
 export function formatTolls(tolls: number) {
