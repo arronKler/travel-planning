@@ -12,6 +12,13 @@ import { resolveSteps } from "@/utils/routes"
 export function Planner() {
   const [input, setInput] = useState("")
 
+  const { replaceSmartKeywordsCity } = usePlanStore()
+
+  const smartPlan = async () => {
+    const keywords = ["成都", "天水", "张掖", "敦煌"]
+    replaceSmartKeywordsCity(keywords.map((k) => ({ keyword: k, city: "" })))
+  }
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 overflow-auto">
@@ -31,7 +38,7 @@ export function Planner() {
         />
 
         <div className="flex items-center ml-1">
-          <Button color="primary" className="">
+          <Button color="primary" className="" onClick={smartPlan}>
             发送
           </Button>
         </div>

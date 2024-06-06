@@ -12,13 +12,19 @@ import { calculateTotalTolls } from "@/utils/routes"
 
 export function PlanList() {
   const [keywords, setKeywords] = useState<string[]>(["", "", ""])
-  const [routeNodes, driving, updateRouteNode, replaceRouteNodes] =
-    usePlanStore((state) => [
-      state.routeNodes,
-      state.driving,
-      state.updateRouteNode,
-      state.replaceRouteNodes,
-    ])
+  const [
+    routeNodes,
+    driving,
+    updateRouteNode,
+    replaceRouteNodes,
+    smartKeywordsCity,
+  ] = usePlanStore((state) => [
+    state.routeNodes,
+    state.driving,
+    state.updateRouteNode,
+    state.replaceRouteNodes,
+    state.smartKeywordsCity,
+  ])
 
   useEffect(() => {
     const nodesStr = localStorage.getItem("draft")
@@ -79,6 +85,7 @@ export function PlanList() {
       geoCodesRequests.push(getGeoCode(route.keyword, route.city))
     }
     const codes = await Promise.all(geoCodesRequests)
+    console.log("codes", codes)
     const demoRoutesWithCodes = demoRoutes.map((route, idx) => {
       const [lng, lat] = codes[idx][0].location.split(",")
       return {
@@ -143,6 +150,29 @@ export function PlanList() {
     console.log(planStr)
   }
 
+  const [autoPlan, setAutoPlan] = useState(false)
+  useEffect(() => {
+    console.log("go smart", smartKeywordsCity)
+    if (smartKeywordsCity.length > 0) {
+      console.log(
+        "let words",
+        smartKeywordsCity.map((kc) => kc.keyword)
+      )
+      setKeywords(smartKeywordsCity.map((kc) => kc.keyword))
+      setAutoPlan(true)
+      // setTimeout(() => {
+      //   planIt()
+      // }, 0)
+    }
+  }, [smartKeywordsCity])
+
+  useEffect(() => {
+    if (autoPlan) {
+      planIt()
+      setAutoPlan(false)
+    }
+  }, [autoPlan, planIt])
+
   return (
     <>
       <div className="w-96">
@@ -161,8 +191,8 @@ export function PlanList() {
                 )}
               </section>
               {routeNodes[idx]?.edge && (
-                <section className="flex rounded flex-col items-center">
-                  <div className="border-r border-dashed h-10"></div>
+                <section className="flex rounded flex-col items-center text-sm">
+                  <div className="border-r border-dashed h-4"></div>
                   <div>
                     <span className="border-r mr-1 pr-1">
                       距离: {routeNodes[idx]?.edge?.distance_str} 公里
@@ -172,7 +202,7 @@ export function PlanList() {
                     </span>
                     <span>时间: {routeNodes[idx]?.edge?.time_str} 小时</span>
                   </div>
-                  <div className="border-r border-dashed h-10"></div>
+                  <div className="border-r border-dashed h-4"></div>
                 </section>
               )}
             </div>

@@ -4,8 +4,16 @@ import { immer } from "zustand/middleware/immer"
 import { RouteNode } from "@/constants/routes"
 import { getGeoCode } from "@/request/geo"
 
+interface KC {
+  keyword: string
+  city: string
+}
+
 interface PlanStore {
   routeNodes: RouteNode[]
+  smartKeywordsCity: KC[]
+
+  replaceSmartKeywordsCity: (k: KC[]) => void
   driving: any
   updateDriving: (d: any) => void
   initDemoRoute: () => void
@@ -18,6 +26,7 @@ export const usePlanStore = create<PlanStore>()(
   immer((set) => ({
     routeNodes: [] as RouteNode[],
     driving: null,
+    smartKeywordsCity: [] as KC[],
 
     replaceRouteNodes: (nodes: RouteNode[]) => {
       set((state) => {
@@ -128,6 +137,12 @@ export const usePlanStore = create<PlanStore>()(
     updateDriving: (driving: any) => {
       set((state) => {
         state.driving = driving
+      })
+    },
+
+    replaceSmartKeywordsCity: (kc: KC[]) => {
+      set((state) => {
+        state.smartKeywordsCity = kc
       })
     },
   }))
